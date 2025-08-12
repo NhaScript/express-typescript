@@ -21,6 +21,8 @@ export const ConfigSchema = z.object({
   jwt: z.object({
     accessTokenSecret: z.string().min(1, "JWT access token secret is required"),
     accessTokenExpiration: z.number(),
+    refreshTokenSecret: z.string().min(1, "JWT refresh token secret is required"),
+    refreshTokenExpiration: z.number(),
     issuer: z.string(),
     audience: z.string(),
   }),

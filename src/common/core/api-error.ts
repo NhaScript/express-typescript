@@ -7,7 +7,8 @@ export enum ErrorType {
     INTERNAL = "Internal",
     TOKEN_EXPIRED = "TokenExpired",
     BAD_TOKEN = "BadToken",
-    ACCESS_TOKEN_ERROR = "AccessTokenError"
+    ACCESS_TOKEN_ERROR = "AccessTokenError",
+     DUPLICATE_ERROR = "DuplicateError"
 }
 export class ApiError extends Error{
      type: ErrorType

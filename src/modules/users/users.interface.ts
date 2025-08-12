@@ -8,8 +8,8 @@ export interface IUser extends Document {
   photoUrl?: string;
   provider: Providers;
   providerId: string;
-  email?: string; // Top-level email (optional, used for email login)
-  password?: string; // Hashed password (optional, used for email login)
+  email?: string;
+  password?: string;
   role: Role;
   lastLogin: Date;
   status: boolean;

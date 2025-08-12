@@ -23,7 +23,9 @@ const rawConfig = {
   // JWT configuration
   jwt: {
     accessTokenSecret: process.env.JWT_ACCESS_TOKEN_SECRET,
-    accessTokenExpiration: Number(process.env.JWT_ACCESS_TOKEN_EXPIRATION || 3600), // default to 1 hour
+    accessTokenExpiration: Number(process.env.JWT_ACCESS_TOKEN_EXPIRATION || 3600),
+    refreshTokenSecret: process.env.JWT_REFRESH_TOKEN_SECRET,
+    refreshTokenExpiration: Number(process.env.JWT_REFRESH_TOKEN_EXPIRATION || 604800),
     issuer: process.env.JWT_ISSUER || 'your-issuer', // Replace with your issuer
     audience: process.env.JWT_AUDIENCE || 'your-audience', // Replace with your audience
   },
