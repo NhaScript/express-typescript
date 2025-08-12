@@ -5,3 +5,8 @@ export interface SigninResult {
   accessToken: string;  // JWT access token
   refreshToken: string; // JWT refresh token
 }
+
+export interface RefreshTokenPayload {
+  sub: string;
+  jti: string;
+}

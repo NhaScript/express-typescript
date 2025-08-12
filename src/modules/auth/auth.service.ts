@@ -1,6 +1,6 @@
 import { SigninWithTelegramInput, SignupWithEmailInput } from "@modules/auth/auth.schema";
 import { comparePassword, hashPassword } from "@common/utils/bcrypt";
-import { BadRequestError, ForbiddenError } from "@common/core/custom-error";
+import { BadRequestError, BadTokenError, ForbiddenError } from "@common/core/custom-error";
 import { v4 as uuidv4 } from "uuid";
 import { Providers } from "@common/enums/providers.enum";
 import User from "@modules/users/users.model";
@@ -9,9 +9,12 @@ import {
   generateAccessToken,
   generateRefreshToken,
   generateTokenId,
+  verifyRefreshToken,
 } from "@common/utils/jwt";
-import { SigninResult } from "./auth.interface";
+import { RefreshTokenPayload, SigninResult } from "./auth.interface";
 import { Role } from "@common/enums/roles.enum";
+import { redisClient } from "@common/core/redis";
+import { envConfig } from "@config/env";
 
 export const signupWithEmail = async (
   data: SignupWithEmailInput
@@ -118,9 +121,48 @@ export const signinWithTelegram = async (data: SigninWithTelegramInput): Promise
   const accessToken = generateAccessToken(user._id.toString());
   const refreshToken = generateRefreshToken(user._id.toString(), tokenId);
 
+  await redisClient.set(`refresh_token:${tokenId}`, refreshToken);
+  await redisClient.expire(`refresh_token:${tokenId}`, envConfig.jwt.refreshTokenExpiration);
+
   return {
     user,
     accessToken,
     refreshToken
   };
 };
+
+export const rotateRefreshToken = async (oldRefreshToken: string) => {
+    const payload = verifyRefreshToken(oldRefreshToken) as RefreshTokenPayload | null;
+    if (!payload) {
+        throw new BadRequestError("Invalid refresh token");
+    }
+    
+    const userId: string = payload.sub;
+    const tokenId: string = payload.jti;
+
+    const redisKey = `refresh_token:${tokenId}`;
+
+    // 2. Check if refresh token exists in Redis
+    const storedToken = await redisClient.get(redisKey);
+    if (!storedToken || storedToken !== oldRefreshToken) {
+      throw new BadTokenError('Refresh token invalid or revoked');
+    }
+
+    
+    // Generate new tokens
+    const newTokenId: string = await generateTokenId();
+    const newAccessToken = generateAccessToken(userId);
+    const newRefreshToken = generateRefreshToken(userId, newTokenId);
+    
+    // Store the new refresh token in Redis
+    await redisClient.set(`refresh_token:${newTokenId}`, newRefreshToken);
+    await redisClient.expire(`refresh_token:${newTokenId}`, envConfig.jwt.refreshTokenExpiration);
+    
+    // Delete the old refresh token from Redis
+    await redisClient.del(`refresh_token:${tokenId}`);
+    
+    return {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+    };
+}

@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { validator } from "@common/middlewares/validate.middleware";
+import { ValidationType, validator } from "@common/middlewares/validate.middleware";
 import {
+    rotateRefreshTokenHandler,
   signinWithEmailHandler,
   signinWithTelegramHandler,
   signupWithEmailHandler,
@@ -14,19 +15,23 @@ import {
 const router = Router();
 
 router.post(
-  "/signupWithEmail",
+  "/signup_with_email",
   validator(signupWithEmailSchema),
   signupWithEmailHandler
 );
 router.post(
-  "/signinWithEmail",
+  "/signin_with_email",
   validator(signinWithEmailSchema),
   signinWithEmailHandler
 );
 router.post(
-  "/signinWithTelegram",
+  "/signin_with_telegram",
   validator(signinWithTelegramSchema),
   signinWithTelegramHandler
+);
+router.get(
+  "/refresh_token",
+  rotateRefreshTokenHandler
 );
 
 export const authRouter = router;

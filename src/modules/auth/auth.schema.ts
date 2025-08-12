@@ -27,6 +27,7 @@ export const signupWithEmailSchema = z.object({
     )
 })
 
+
 export type SigninWithTelegramInput = z.infer<typeof signinWithTelegramSchema>;
 export type SigninWithEmailInput = z.infer<typeof signinWithEmailSchema>;
 export type SignupWithEmailInput = z.infer<typeof signupWithEmailSchema>;

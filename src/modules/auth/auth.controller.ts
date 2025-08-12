@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { SigninWithTelegramInput, SignupWithEmailInput } from "./auth.schema";
-import { signinWithEmail, signinWithTelegram, signupWithEmail } from "./auth.service";
+import { CookieInput, SigninWithTelegramInput, SignupWithEmailInput } from "./auth.schema";
+import { rotateRefreshToken, signinWithEmail, signinWithTelegram, signupWithEmail } from "./auth.service";
 import { StatusCode } from "@common/enums/status-code.enum";
 import { SigninResult } from "./auth.interface";
 import { BadRequestError, UnauthorizedError } from "@common/core/custom-error";
@@ -80,5 +80,29 @@ export const signinWithTelegramHandler = async (req: Request<{}, {}, SigninWithT
   res.status(StatusCode.OK).json({
     message: "Signin with telegram  successful",
     result: { user: result?.user, accessToken: result?.accessToken },
+  });
+};
+
+export const rotateRefreshTokenHandler = async (req: Request, res: Response) => {
+  const refreshToken = req.cookies?.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(StatusCode.UNAUTHORIZED).json({ message: "Refresh token not found" });
+  }
+
+  const result = await rotateRefreshToken(refreshToken);
+  if (!result) {
+    return res.status(StatusCode.UNAUTHORIZED).json({ message: "Failed to rotate refresh token" });
+  }
+
+  res.cookie("refreshToken", result.refreshToken, {
+    httpOnly: true,
+    secure: envConfig.environment === Environment.PRODUCTION,
+    sameSite: envConfig.cookie.sameSite,
+    maxAge: envConfig.cookie.maxAge,
+  });
+  res.status(StatusCode.OK).json({
+    message: "Refresh token rotated successfully",
+    result: { accessToken: result.accessToken },
   });
 };
