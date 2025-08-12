@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CookieInput, SigninWithTelegramInput, SignupWithEmailInput } from "./auth.schema";
+import { SigninWithTelegramInput, SignupWithEmailInput } from "./auth.schema";
 import { rotateRefreshToken, signinWithEmail, signinWithTelegram, signupWithEmail } from "./auth.service";
 import { StatusCode } from "@common/enums/status-code.enum";
 import { SigninResult } from "./auth.interface";
@@ -87,12 +87,12 @@ export const rotateRefreshTokenHandler = async (req: Request, res: Response) => 
   const refreshToken = req.cookies?.refreshToken;
 
   if (!refreshToken) {
-    return res.status(StatusCode.UNAUTHORIZED).json({ message: "Refresh token not found" });
+    throw new BadRequestError('Refresh token not found')
   }
 
   const result = await rotateRefreshToken(refreshToken);
   if (!result) {
-    return res.status(StatusCode.UNAUTHORIZED).json({ message: "Failed to rotate refresh token" });
+    throw new UnauthorizedError("Failed to rotate refresh token");
   }
 
   res.cookie("refreshToken", result.refreshToken, {
