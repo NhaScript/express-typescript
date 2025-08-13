@@ -1,12 +1,13 @@
 import { Request, Response } from "express";
 import { SigninWithTelegramInput, SignupWithEmailInput } from "./auth.schema";
-import { rotateRefreshToken, signinWithEmail, signinWithTelegram, signupWithEmail } from "./auth.service";
+import { changeAdminPassword, profile, rotateRefreshToken, signinWithEmail, signinWithTelegram, signout, signupWithEmail, toggleUserStatus } from "./auth.service";
 import { StatusCode } from "@common/enums/status-code.enum";
 import { SigninResult } from "./auth.interface";
-import { BadRequestError, UnauthorizedError } from "@common/core/custom-error";
+import { BadRequestError, NotFoundError, UnauthorizedError } from "@common/core/custom-error";
 import { isValidTelegramAuthDate, validateTelegramAuth } from "@common/utils/telegram";
 import { Environment } from "@common/enums/enviroment.enum";
 import { envConfig } from "@config/env";
+import { AuthRequest } from "@common/interfaces/AuthRequest";
 
 export const signupWithEmailHandler = async (
   req: Request<{}, {}, SignupWithEmailInput>,
@@ -38,6 +39,14 @@ export const signinWithEmailHandler = async (req: Request<{},{},SignupWithEmailI
       message: "Invalid email or password",
     });
   }
+
+   res.cookie("refreshToken", result?.refreshToken, {
+    httpOnly: true,
+    secure: envConfig.environment === Environment.PRODUCTION,
+    sameSite: envConfig.cookie.sameSite,
+    maxAge: envConfig.cookie.maxAge,
+  });
+
   res.status(StatusCode.OK).json({
     message: "User signed in successfully",
     result: {
@@ -104,5 +113,65 @@ export const rotateRefreshTokenHandler = async (req: Request, res: Response) => 
   res.status(StatusCode.OK).json({
     message: "Refresh token rotated successfully",
     result: { accessToken: result.accessToken },
+  });
+};
+
+export const signoutHandler = async (req: AuthRequest, res: Response) => {
+  const refreshToken = req.cookies?.refreshToken;
+  const userId = req.user!._id?.toString();
+  if (!refreshToken) {
+    throw new BadRequestError('Refresh token not found');
+  }
+
+  await signout(userId, refreshToken);
+  res.clearCookie("refreshToken");
+  res.status(StatusCode.OK).json({
+    message: "User signed out successfully",
+  });
+};
+
+export const profileHandler = async (req: AuthRequest, res: Response) => {
+  const userId: string = req.user!._id?.toString();
+  if (!userId) {
+    throw new BadRequestError("User not found");
+  }
+
+  const user = await profile(userId);
+  if (!user) {
+    throw new NotFoundError("User not found");
+  }
+
+  res.status(StatusCode.OK).json({
+    message: "User profile retrieved successfully",
+    user: {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      provider: user.provider,
+    },
+  });
+};
+
+
+export const changeAdminPasswordHandler = async (req: AuthRequest, res: Response) => {
+    const superAdminId: string = req.user!._id?.toString();
+    const { userId, newPassword } = req.body;
+
+    await changeAdminPassword(superAdminId, userId, newPassword);
+
+    res.status(StatusCode.OK).json({
+      message: "Password changed successfully",
+    });
+}
+
+export const toggleUserHandler = async (req: AuthRequest, res: Response) => {
+  const adminId: string = req.user!._id?.toString();
+  const { userId } = req.body;
+
+  await toggleUserStatus(adminId, userId);
+
+  res.status(StatusCode.OK).json({
+    message: "User status toggled successfully",
   });
 };

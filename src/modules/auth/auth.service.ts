@@ -1,6 +1,6 @@
 import { SigninWithTelegramInput, SignupWithEmailInput } from "@modules/auth/auth.schema";
 import { comparePassword, hashPassword } from "@common/utils/bcrypt";
-import { BadRequestError, BadTokenError, ForbiddenError } from "@common/core/custom-error";
+import { BadRequestError, BadTokenError, ForbiddenError, NotFoundError } from "@common/core/custom-error";
 import { v4 as uuidv4 } from "uuid";
 import { Providers } from "@common/enums/providers.enum";
 import User from "@modules/users/users.model";
@@ -82,6 +82,12 @@ export const signinWithEmail = async (email: string, password: string): Promise<
   const tokenId: string = await generateTokenId();
   const accessToken = generateAccessToken(user._id.toString());
   const refreshToken = generateRefreshToken(user._id.toString(), tokenId);
+
+  const redisKey = `refresh_token:${user._id}:${tokenId}`;
+  await redisClient.set(redisKey, refreshToken);
+  await redisClient.expire(redisKey, envConfig.jwt.refreshTokenExpiration);
+
+
   return {
     user,
     accessToken,
@@ -121,8 +127,9 @@ export const signinWithTelegram = async (data: SigninWithTelegramInput): Promise
   const accessToken = generateAccessToken(user._id.toString());
   const refreshToken = generateRefreshToken(user._id.toString(), tokenId);
 
-  await redisClient.set(`refresh_token:${tokenId}`, refreshToken);
-  await redisClient.expire(`refresh_token:${tokenId}`, envConfig.jwt.refreshTokenExpiration);
+  const redisKey = `refresh_token:${user._id}:${tokenId}`;
+  await redisClient.set(redisKey, refreshToken);
+  await redisClient.expire(redisKey, envConfig.jwt.refreshTokenExpiration);
 
   return {
     user,
@@ -140,7 +147,7 @@ export const rotateRefreshToken = async (oldRefreshToken: string) => {
     const userId: string = payload.sub;
     const tokenId: string = payload.jti;
 
-    const redisKey = `refresh_token:${tokenId}`;
+    const redisKey = `refresh_token:${userId}:${tokenId}`;
 
     // 2. Check if refresh token exists in Redis
     const storedToken = await redisClient.get(redisKey);
@@ -153,16 +160,93 @@ export const rotateRefreshToken = async (oldRefreshToken: string) => {
     const newTokenId: string = await generateTokenId();
     const newAccessToken = generateAccessToken(userId);
     const newRefreshToken = generateRefreshToken(userId, newTokenId);
-    
+
+    const newRedisKey = `refresh_token:${userId}:${newTokenId}`;
     // Store the new refresh token in Redis
-    await redisClient.set(`refresh_token:${newTokenId}`, newRefreshToken);
-    await redisClient.expire(`refresh_token:${newTokenId}`, envConfig.jwt.refreshTokenExpiration);
-    
+    await redisClient.set(newRedisKey, newRefreshToken);
+    await redisClient.expire(newRedisKey, envConfig.jwt.refreshTokenExpiration);
+
     // Delete the old refresh token from Redis
-    await redisClient.del(`refresh_token:${tokenId}`);
-    
+    await redisClient.del(redisKey);
+
     return {
         accessToken: newAccessToken,
         refreshToken: newRefreshToken,
     };
 }
+
+export const signout = async (userId: string, refreshToken: string): Promise<void> => {
+  const payload = verifyRefreshToken(refreshToken) as RefreshTokenPayload | null;
+  if (!payload) {
+    throw new BadRequestError("Invalid refresh token");
+  }
+
+  const tokenId: string = payload.jti;
+
+  const redisKey = `refresh_token:${userId}:${tokenId}`;
+  // Remove refresh token from Redis
+  await redisClient.del(redisKey);
+};
+
+export const profile = async (userId: string): Promise<IUser | null> => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new NotFoundError("User not found");
+  }
+  return user;
+};
+
+export const changeAdminPassword = async (
+  superAdminId: string,
+  targetUserId: string,
+  newPassword: string
+): Promise<void> => {
+  // Verify super admin
+  const superAdmin = await User.findById(superAdminId);
+  if (!superAdmin) {
+    throw new NotFoundError("Super admin not found");
+  }
+  if (superAdmin.role !== Role.SUPER) {
+    throw new ForbiddenError("Only super admins can change passwords");
+  }
+
+  // Find target user
+  const user = await User.findById(targetUserId);
+  if (!user || user.role === Role.USER || user.status === false) {
+    throw new NotFoundError("User not found");
+  }
+
+  // Hash and update password
+  const hashedPassword = await hashPassword(newPassword);
+  user.password = hashedPassword;
+  await user.save();
+};
+
+export const toggleUserStatus = async (adminId: string, userId: string): Promise<void> => {
+  // Verify admin
+  const admin = await User.findById(adminId);
+  if (!admin) {
+    throw new NotFoundError("Admin not found");
+  }
+  if (admin.role !== Role.SUPER) {
+    throw new ForbiddenError("Only super admins can change user status");
+  }
+  
+
+  // Find target user
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new NotFoundError("User not found");
+  }
+
+  // Toggle user status
+  user.status = !user.status;
+  await user.save();
+    // If disabling, delete all refresh tokens for this user
+  if (!user.status) {
+    const keys = await redisClient.keys(`refresh_token:${user._id}:*`);
+    if (keys.length > 0) {
+      await redisClient.del(keys);
+    }
+  }
+};

@@ -6,6 +6,7 @@ import { requestLogger } from "@common/middlewares/request-logger.middleware"
 import { sanitizeRequest } from "@common/middlewares/sanitize.middleware"
 import { corsOptions } from "@common/middlewares/cors.middleware"
 import { authRouter } from "@modules/auth/auth.route"
+import { errorHandler } from "@common/middlewares/error.middlware"
 const app: express.Application = express()
 
 app.use(cors(corsOptions))
@@ -19,5 +20,5 @@ app.use("/api/v1/auth", authRouter)
 app.get("/health", (req, res) => {
   res.status(200).send("OK")
 })
-
+app.use(errorHandler)
 export default app
