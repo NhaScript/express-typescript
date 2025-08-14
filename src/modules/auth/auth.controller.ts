@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { SigninWithTelegramInput, SignupWithEmailInput } from "./auth.schema";
-import { changeAdminPassword, profile, rotateRefreshToken, signinWithEmail, signinWithTelegram, signout, signupWithEmail, toggleUserStatus } from "./auth.service";
+import { profile, rotateRefreshToken, signinWithEmail, signinWithTelegram, signout, signupWithEmail, toggleUserStatus } from "./auth.service";
 import { StatusCode } from "@common/enums/status-code.enum";
 import { SigninResult } from "./auth.interface";
 import { BadRequestError, NotFoundError, UnauthorizedError } from "@common/core/custom-error";
@@ -154,22 +154,10 @@ export const profileHandler = async (req: AuthRequest, res: Response) => {
 };
 
 
-export const changeAdminPasswordHandler = async (req: AuthRequest, res: Response) => {
-    const superAdminId: string = req.user!._id?.toString();
-    const { userId, newPassword } = req.body;
-
-    await changeAdminPassword(superAdminId, userId, newPassword);
-
-    res.status(StatusCode.OK).json({
-      message: "Password changed successfully",
-    });
-}
-
 export const toggleUserHandler = async (req: AuthRequest, res: Response) => {
-  const adminId: string = req.user!._id?.toString();
   const { userId } = req.body;
 
-  await toggleUserStatus(adminId, userId);
+  await toggleUserStatus(userId);
 
   res.status(StatusCode.OK).json({
     message: "User status toggled successfully",

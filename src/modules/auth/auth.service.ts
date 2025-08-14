@@ -196,43 +196,8 @@ export const profile = async (userId: string): Promise<IUser | null> => {
   return user;
 };
 
-export const changeAdminPassword = async (
-  superAdminId: string,
-  targetUserId: string,
-  newPassword: string
-): Promise<void> => {
-  // Verify super admin
-  const superAdmin = await User.findById(superAdminId);
-  if (!superAdmin) {
-    throw new NotFoundError("Super admin not found");
-  }
-  if (superAdmin.role !== Role.SUPER) {
-    throw new ForbiddenError("Only super admins can change passwords");
-  }
 
-  // Find target user
-  const user = await User.findById(targetUserId);
-  if (!user || user.role === Role.USER || user.status === false) {
-    throw new NotFoundError("User not found");
-  }
-
-  // Hash and update password
-  const hashedPassword = await hashPassword(newPassword);
-  user.password = hashedPassword;
-  await user.save();
-};
-
-export const toggleUserStatus = async (adminId: string, userId: string): Promise<void> => {
-  // Verify admin
-  const admin = await User.findById(adminId);
-  if (!admin) {
-    throw new NotFoundError("Admin not found");
-  }
-  if (admin.role !== Role.SUPER) {
-    throw new ForbiddenError("Only super admins can change user status");
-  }
-  
-
+export const toggleUserStatus = async (userId: string): Promise<void> => {
   // Find target user
   const user = await User.findById(userId);
   if (!user) {

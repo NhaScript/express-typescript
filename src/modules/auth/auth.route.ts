@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { validator } from "@common/middlewares/validate.middleware";
 import {
-  changeAdminPasswordHandler,
   profileHandler,
   rotateRefreshTokenHandler,
   signinWithEmailHandler,
@@ -44,11 +43,5 @@ router.get(
   profileHandler
 );
 
-router.post(
-  "/change_admin_password",
-  authenticate,
-  authorize(Role.SUPER),
-  changeAdminPasswordHandler
-);
 
 export const authRouter = router;
