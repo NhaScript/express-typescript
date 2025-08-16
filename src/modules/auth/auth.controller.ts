@@ -7,7 +7,7 @@ import { BadRequestError, NotFoundError, UnauthorizedError } from "@common/core/
 import { isValidTelegramAuthDate, validateTelegramAuth } from "@common/utils/telegram";
 import { Environment } from "@common/enums/enviroment.enum";
 import { envConfig } from "@config/env";
-import { AuthRequest } from "@common/interfaces/AuthRequest";
+import { AuthRequest } from "@common/interfaces/auth-req.interface";
 
 export const signupWithEmailHandler = async (
   req: Request<{}, {}, SignupWithEmailInput>,

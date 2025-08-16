@@ -42,11 +42,17 @@ export const ConfigSchema = z.object({
   user: z.object({
     username: z.string(),
     password: z.string(),
-    email: z.string().email(),
+    email: z.email(),
     usernameAdmin: z.string(),
-    emailAdmin: z.string().email(),
+    emailAdmin: z.email(),
     passwordAdmin: z.string(),
   }),
+  redis: z.object({
+    host: z.string(),
+    port: z.number().default(6379),
+    password: z.string()
+
+  })
 });
 
 export type ConfigType = z.infer<typeof ConfigSchema>;

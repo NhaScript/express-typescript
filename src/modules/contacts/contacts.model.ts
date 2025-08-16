@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-
 const contactSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
@@ -47,6 +46,6 @@ const contactSchema = new mongoose.Schema({
             date: Date.now()
         }
     ]
-})
+}, {timestamps: true})
 
 exports.Contact = mongoose.model("Contact", contactSchema)

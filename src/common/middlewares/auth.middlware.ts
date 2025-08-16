@@ -1,6 +1,6 @@
 import { ForbiddenError, TokenExpiredError, UnauthorizedError } from "@common/core/custom-error";
 import { Role } from "@common/enums/roles.enum";
-import { AuthRequest } from "@common/interfaces/AuthRequest";
+import { AuthRequest } from "@common/interfaces/auth-req.interface";
 import { verifyAccessToken } from "@common/utils/jwt";
 import { profile } from "@modules/auth/auth.service";
 import { NextFunction, Response } from "express";

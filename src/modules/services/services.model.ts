@@ -12,6 +12,6 @@ const serviceSchema = new mongoose.Schema({
         type: Boolean,
         default: true
     }
-})
+}, {timestamps: true})
 
 exports.Service = mongoose.model("Service", serviceSchema)

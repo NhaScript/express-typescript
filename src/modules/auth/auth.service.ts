@@ -13,7 +13,7 @@ import {
 } from "@common/utils/jwt";
 import { RefreshTokenPayload, SigninResult } from "./auth.interface";
 import { Role } from "@common/enums/roles.enum";
-import { redisClient } from "@common/core/redis";
+import { redisClient } from "cache/redis";
 import { envConfig } from "@config/env";
 
 export const signupWithEmail = async (

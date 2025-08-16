@@ -52,6 +52,11 @@ const rawConfig = {
     usernameAdmin: process.env.ADMIN_USERNAME,
     emailAdmin: process.env.ADMIN_EMAIL,
     passwordAdmin: process.env.ADMIN_PASSWORD,
+  },
+  redis: {
+    host: process.env.REDIS_HOST,
+    port: Number(process.env.REDIS_PORT) ,
+    password: process.env.REDIS_PASSWORD
   }
 };
 export const envConfig: ConfigType = ConfigSchema.parse(rawConfig);

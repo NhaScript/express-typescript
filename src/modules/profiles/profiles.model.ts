@@ -12,6 +12,7 @@ const profileSchema = new mongoose.Schema({
      user: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
+        unique: true,
         ref: 'User'
      },
      username: {
@@ -73,4 +74,5 @@ const profileSchema = new mongoose.Schema({
             type: Boolean
         }
      }
-})
+}, {timestamps: true})
+exports.Profile = mongoose.model("Profile", profileSchema)

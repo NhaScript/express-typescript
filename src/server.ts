@@ -3,7 +3,7 @@ import app from "./app";
 import http from "http";
 import { connectDatabase } from "database";
 import { envConfig } from "@config/env";
-import { connectRedis } from "@common/core/redis";
+import { connectRedis } from "cache/redis";
 
 async function boostrap() {
   try {

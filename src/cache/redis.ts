@@ -1,5 +1,12 @@
+import { envConfig } from '@config/env';
 import { createClient } from 'redis';
-export const redisClient = createClient();
+export const redisClient = createClient({
+  socket: {
+    host: envConfig.redis.host,
+    port: envConfig.redis.port,
+  },
+  password: envConfig.redis.password
+});
 export async function connectRedis() {
   redisClient.on('connect', () => {
     console.log('Connected to Redis');
